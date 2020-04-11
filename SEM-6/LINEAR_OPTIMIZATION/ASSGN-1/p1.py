@@ -1,12 +1,12 @@
 import numpy as np
 
-A = np.array([[1,1],
-	 [0,1],
-	 [1,2]])
+A = np.array([[4,2],
+	 [1,2],
+	 [1,1]])
 
-B = np.array([6,3,9])
+B = np.array([16,8,5])
 
-C = [2, 5]
+C = [3, 2]
 
 
 def construct_table (C, A, B):
@@ -27,14 +27,16 @@ def construct_table (C, A, B):
 	table = np.asarray(table, dtype = np.float64)
 	return table
 
+
 def feasible (M):
 	'''
 		Checks if the dictionary is feasible or not
 		M => coefficients in the objective function
 		reutrns => boolean, if feasible true else false
 	'''
+	
+	return any(coeff > 0 for coeff in M[:-1])
 
-	return any(coeff > 0 for coeff in M)
 
 def getPivot (M):
 	'''
@@ -42,8 +44,37 @@ def getPivot (M):
 		returns => corresponding index of the row and column of the pivot
 	'''
 
-	
+	column = np.argmax(M[0][:-1])
+	list_ = []
 
+	for index, line in enumerate(M[1:]):
+		coeff = line[column]
+		list_.append(math.inf if coeff <= 0 else line[-1]/coeff)
+
+	row = list_.index(min(list_)) + 1
+
+	return (row, column)
+
+
+def updateTable (M, pivotPos):
+	'''
+		M => table (representaion of the dictionary)
+		pivotPos => (i, j) in table for the pivot of dictionary
+		returns => updated table
+	'''
+
+	newTable = np.zeros(M.shape)
+
+	row, column = pivotPos
+	pivot = M[row][column]
+	newTable[row] = M[row]/pivot
+
+	for i in range(M.shape[0]):
+		if i != row:
+			factor = newTable[row] * M[i][column]
+			newTable[i] = M[i] - factor
+
+	return newTable
 
 
 def simplex (C, A, B):
@@ -56,11 +87,13 @@ def simplex (C, A, B):
 
 	table = construct_table(C, A, B)
 
-	# while feasible(table[0]):
-	# 	break;
+	while feasible(table[0]):
+		pivotPos = getPivot(table)
+		table = updateTable(table, pivotPos)
 
-	return solution()
+	return -table[0][-1]
+
 
 if __name__ == '__main__':
 
-	construct_table(C, A, B)
+	print(simplex(C, A, B))
