@@ -1,100 +1,110 @@
 import numpy as np
 import math
 
-A = np.array([[4,2],
-	 [1,2],
-	 [1,1]])
+A = np.array([[-1,0,0],
+	 [0,-1,0],
+	 [0,0,-1],
+	 [1,0,0],
+	 [0,1,0],
+	 [0,0,1],
+	 [1,1,1]])
 
-B = np.array([16,8,5])
+b = np.array([0,0,0,2,2,2,5])
 
-C = [3, 2]
+c = np.array([1, 1, -1])
 
 
-def construct_table (C, A, B):
+def initExtreme():
+	return np.array([2,2,0])
+
+
+def getActiveSet(A, b, x):
 	'''
-		Constructs a table for representation of the dictionary
-		C => coefficients in the objective function
 		A => m*n matrix where each row consists of coefficients of the constraints
-		B => vector of length m, R.H.S values of the constraints
-		returns => zip as shown below
-				   	|C 0|
-				   	|A B|
-	'''
-	
-	obj_ = np.hstack((C, [0]))
-	B = B.reshape(-1,1)
-	constraints_ = np.hstack((A, B))
-	table = np.vstack((obj_, constraints_))
-	table = np.asarray(table, dtype = np.float64)
-	return table
-
-
-def feasible (M):
-	'''
-		Checks if the dictionary is feasible or not
-		M => coefficients in the objective function
-		reutrns => boolean, if feasible true else false
-	'''
-	
-	return any(coeff > 0 for coeff in M[:-1])
-
-
-def getPivot (M):
-	'''
-		M => table (representaion of the dictionary)
-		returns => corresponding index of the row and column of the pivot
+		b => vector of length m, R.H.S values of the constraints
+		x => extreme point
+		returns => Active set at extreme point x
 	'''
 
-	column = np.argmax(M[0][:-1])
-	list_ = []
-
-	for index, line in enumerate(M[1:]):
-		coeff = line[column]
-		list_.append(math.inf if coeff <= 0 else line[-1]/coeff)
-
-	row = list_.index(min(list_)) + 1
-
-	return (row, column)
+	M = A.dot(x) - b
+	arr = np.array(np.where(M == 0)[0])
+	return arr
 
 
-def updateTable (M, pivotPos):
+
+
+def computeZ(A, c, J):
 	'''
-		M => table (representaion of the dictionary)
-		pivotPos => (i, j) in table for the pivot of dictionary
-		returns => updated table
-	'''
-
-	newTable = np.zeros(M.shape)
-
-	row, column = pivotPos
-	pivot = M[row][column]
-	newTable[row] = M[row]/pivot
-
-	for i in range(M.shape[0]):
-		if i != row:
-			factor = newTable[row] * M[i][column]
-			newTable[i] = M[i] - factor
-
-	return newTable
-
-
-def simplex (C, A, B):
-	'''
-		C => coefficients in the objective function
 		A => m*n matrix where each row consists of coefficients of the constraints
-		B => vector of length m, R.H.S values of the constraints
-		returns => solutions for the dictionary
+		c => coefficients in the objective function
+		J => active set at extreme point
+		returns => z
 	'''
 
-	table = construct_table(C, A, B)
+	Aj = A[J, :]
+	z = np.linalg.inv(Aj.T).dot(-c)
+	if (z >= 0).all():
+		return -1
+	else:
+		index = np.min(np.where(z < 0))
+		return index
 
-	while feasible(table[0]):
-		pivotPos = getPivot(table)
-		table = updateTable(table, pivotPos)
 
-	return -table[0][-1]
+def computeDeltaX(A, k, J):
+	'''
+		A => m*n matrix where each row consists of coefficients of the constraints
+		k => indix of element with z < 0
+		returns => deltaX
+	'''
 
+	Aj = A[J, :]
+	rhs = np.zeros((Aj.shape[1],1))
+	rhs[k] = -1
+	deltaX = np.linalg.inv(Aj).dot(rhs)
+	return deltaX
+
+
+def getAlpha(A, b, x, deltaX, J):
+	'''
+		A => m*n matrix where each row consists of coefficients of the constraints
+		b => vector of length m, R.H.S values of the constraints
+		returns => alpha
+	'''
+
+	index = np.array(np.where(A.dot(deltaX) > 0)[0])
+	A = A[index, :]
+	b = b[index]
+	b = b.reshape(-1,1)
+	a = b - A.dot(x)
+	m = A.dot(deltaX)
+	m.reshape(-1,1)
+	arr = np.divide(a, m)
+	alpha = np.min(arr)
+	ind = np.argmin(arr)
+	return alpha, index[ind]
+
+
+def simplex (A, b, c):
+	x = initExtreme()
+	J = getActiveSet(A, b, x)
+	k = computeZ(A, c, J)
+	x_ = np.zeros(x.shape)
+
+	while k != -1:
+		deltaX = computeDeltaX(A, k, J)
+		alpha, index = getAlpha(A, b, x, deltaX, J)
+		l = alpha*deltaX
+		x = x.reshape(-1,1)
+		x = x + l
+		# print(x_)
+		J = np.delete(J, k)
+		J = np.append(J, index)
+		k = computeZ(A, c, J)
+
+	print(x)
 
 if __name__ == '__main__':
+	simplex(A, b, c)
+		
 
-	print(simplex(C, A, B))
+
