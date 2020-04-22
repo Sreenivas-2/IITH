@@ -1,17 +1,18 @@
 import numpy as np
 import sympy as sp
 import math
-from numpy.linalg import matrix_rank
+from numpy.random import randint
+import random
 
-A = np.array([[-1,2],
-	 [3,2],
-	 [1,-1],
-	 [-1,0],
-	 [0,-1]])
+A = np.array([[1,1,0],
+			 [0,-1,1],
+			 [-1,0,0],
+			 [0,-1,0],
+			 [0,0,-1]])
 
-b = np.array([4,14,3,0,0])
+b = np.array([1,0,0,0,0])
 
-c = np.array([3,2])
+c = np.array([1,1,1])
 
 # A = np.array([[1,1,2],
 # 	 [-2,-2,-10],
@@ -43,12 +44,16 @@ def initExtreme(A, b, c):
 	add[1][-1] = 1
 	A_ = np.vstack((A_, add))
 	b_ = np.vstack((b, np.array([0, 1]).reshape(-1,1)))
-	c_ = np.arange(A_.shape[1])
+	c_ = np.zeros(A_.shape[1])
 	c_[-1] = 1
 
 	x = np.zeros(A_.shape[1])
 	x[-1] = 1
+
 	J = np.arange(A_.shape[1])
+	while A_.shape[0] - 2 in J or np.linalg.det(A_[J,:]) == 0:
+		J = np.array(randint(0, A_.shape[0] - 1, A_.shape[1]))
+		# J = np.array(random.sample(range(0, A_.shape[0] - 1), 3))
 
 	x = simplex(A_, b_, c_, x, J, False)
 	if x[-1] > 0:
@@ -67,7 +72,8 @@ def getActiveSet(A, b, x):
 		returns => Active set at extreme point x
 	'''
 
-	M = (A.dot(x) - b).round(5)
+	x = x.reshape(-1,1)
+	M = (A.dot(x) - b).round(3)
 	arr = np.array(np.where(M == 0)[0])
 	return arr
 
@@ -123,7 +129,7 @@ def getAlpha(A, b, x, deltaX, J):
 		returns => alpha
 	'''
 
-	k = A.dot(deltaX).round(5)
+	k = A.dot(deltaX).round(4)
 	index = np.array(np.where(k > 0)[0])
 	A = A[index, :]
 	b = b[index]
@@ -147,7 +153,10 @@ def simplex (A, b, c, x, J, flag = True):
 		print('Iteration - ' + str(cnt))
 		cnt += 1
 		deltaX = computeDeltaX(A, k, J)
-		deltaX = np.asarray(deltaX, dtype = np.float64)
+		deltaX = deltaX.reshape(-1,1)
+		if (A.dot(deltaX) <= 0).all():
+			return None
+
 		alpha, index = getAlpha(A, b, x, deltaX, J)
 		l = alpha*deltaX
 		x = x.reshape(-1,1)
@@ -156,7 +165,7 @@ def simplex (A, b, c, x, J, flag = True):
 		J = np.append(J, index)
 		k = computeZ(A, c, J, flag)
 
-	return x
+	return x.round(4)
 
 if __name__ == '__main__':
 
@@ -165,7 +174,10 @@ if __name__ == '__main__':
 		print('Infeasible')
 	else:
 		x = simplex(A, b, c, x, J)
-		print(x)
+		if x is None:
+			print('Unbounded')
+		else:
+			print(x)
 
 
 		

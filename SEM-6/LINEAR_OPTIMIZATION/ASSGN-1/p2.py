@@ -1,59 +1,67 @@
 import numpy as np
 import sympy as sp
 import math
-from numpy.linalg import matrix_rank
+from numpy.random import randint
+import random
 
-A = np.array([[-1,0,0],
-	 [0,-1,0],
-	 [0,0,-1],
-	 [1,0,0],
-	 [0,1,0],
-	 [0,0,1],
-	 [1,1,1]])
+A = np.array([[1,1,0],
+			 [0,-1,1],
+			 [-1,0,0],
+			 [0,-1,0],
+			 [0,0,-1]])
 
-b = np.array([0,0,0,2,2,2,5])
+b = np.array([1,0,0,0,0])
 
-c = np.array([1, 1, -1])
+c = np.array([1,1,1])
 
-# A = np.array([[1,-2,-2,3],
-# 	 [2,-3,-1,1],
-# 	 [0,0,1,0],
-# 	 [-1,0,0,0],
-# 	 [0,-1,0,0],
-# 	 [0,0,-1,0],
-# 	 [0,0,0,-1]], dtype = np.float64)
+# A = np.array([[1,1,2],
+# 	 [-2,-2,-10],
+# 	 [-1,0,0],
+# 	 [0,-1,0],
+# 	 [0,0,-1],
+# 	 [0,0,1]])
 
-# b = np.array([0,0,1,0,0,0,0], dtype = np.float64)
+# b = np.array([2,-10,0,0,0,1])
 
-# c = np.array([-3,5,-1,2], dtype = np.float64)
+# c = np.array([0,0,1])
 
-# A = np.array([[5,4],
-# 	 [1,2]])
+# A = np.array([[1,1],
+# 	 [-2,-2],
+# 	 [-1,0],
+# 	 [0,-1]])
 
-# b = np.array([32,10])
+# b = np.array([2,-10,0,0])
 
-# c = np.array([-2,-3])
+# c = np.array([3,-1])
 
 
-def initExtreme(A, b):
-	# b_ = b
-	# b = b.reshape(-1,1)
-	# M = np.hstack((A, b))
-	# _, inds = sp.Matrix(M).T.rref()
+def initExtreme(A, b, c):
 
-	# if len(inds) > A.shape[1]:
-	# 	inds = inds[:A.shape[1]]
+	b = b.reshape(-1, 1)
+	A_ = np.hstack((A, b))
+	add = np.zeros((2, A_.shape[1]))
+	add[0][-1] = -1
+	add[1][-1] = 1
+	A_ = np.vstack((A_, add))
+	b_ = np.vstack((b, np.array([0, 1]).reshape(-1,1)))
+	c_ = np.zeros(A_.shape[1])
+	c_[-1] = 1
 
-	# inds = np.array(inds)
-	# print(inds)
-	# A = A[inds, :]
-	# b_ = b_[inds]
-	# b_ = b_.reshape(-1,1)
-	# x = np.linalg.inv(A).dot(b_)
-	# return x, inds
-	return np.array([2,2,0]), np.array([2,3,4])
-	# return np.array([0,0,2]), np.array([0,1,5])
-	# return np.array([0,0,0,0]), np.array([3,4,5,6])
+	x = np.zeros(A_.shape[1])
+	x[-1] = 1
+
+	J = np.arange(A_.shape[1])
+	while A_.shape[0] - 2 in J or np.linalg.det(A_[J,:]) == 0:
+		J = np.array(randint(0, A_.shape[0] - 1, A_.shape[1]))
+		# J = np.array(random.sample(range(0, A_.shape[0] - 1), 3))
+
+	x = simplex(A_, b_, c_, x, J, False)
+	if x[-1] > 0:
+		return None, None
+
+	J = getActiveSet(A, b, x[:-1])
+
+	return x[:-1], J
 
 
 def getActiveSet(A, b, x):
@@ -64,14 +72,14 @@ def getActiveSet(A, b, x):
 		returns => Active set at extreme point x
 	'''
 
-	M = A.dot(x) - b
+	M = (A.dot(x) - b).round(4)
 	arr = np.array(np.where(M == 0)[0])
 	return arr
 
 
 
 
-def computeZ(A, c, J):
+def computeZ(A, c, J, flag):
 	'''
 		A => m*n matrix where each row consists of coefficients of the constraints
 		c => coefficients in the objective function
@@ -80,18 +88,23 @@ def computeZ(A, c, J):
 	'''
 
 	Aj = A[J, :]
+	c = c.reshape(-1,1)
 	z = np.linalg.inv(Aj.T).dot(-c)
-	# print('z',z)
-	if (z >= 0).all():
-		return -1
+
+	if flag:
+		if (z <= 0).all():
+			return -1
+		else:
+			l = np.where(z>0)[0]
+			index = np.where(J == np.min(J[l]))
+			return index[0]
 	else:
-		# print('---',np.where(z<0))
-		l = np.where(z<0)[0]
-		# print(l)
-		index = np.where( J == np.min(J[l]))
-		# index = np.min(np.where(z < 0))
-		# J[index]
-		return index[0]
+		if (z >= 0).all():
+			return -1
+		else:
+			l = np.where(z<0)[0]
+			index = np.where(J == np.min(J[l]))
+			return index[0]
 
 
 def computeDeltaX(A, k, J):
@@ -119,56 +132,60 @@ def getAlpha(A, b, x, deltaX, J):
 	index = np.array(np.where(k > 0)[0])
 	A = A[index, :]
 	b = b[index]
-	# print(A)
 	x = x.reshape(-1,1)
-	# print(x)
-	# print(b)
 	b = b.reshape(-1,1)
 	a = b - A.dot(x)
 	m = A.dot(deltaX)
 	m.reshape(-1,1)
-	# print('a',a)
-	# print('m',m)
 	arr = np.divide(a, m)
-	# print(arr)
 	alpha = np.min(arr)
 	ind = np.argmin(arr)
 	return alpha, index[ind]
 
 
-def simplex (A, b, c):
-	x, inds = initExtreme(A, b)
-	# print(x)
-	# J = getActiveSet(A, b, x)
-	J = inds
-	k = computeZ(A, c, J)
-	x_ = np.zeros(x.shape)
-	# print('1\n-', J + 1)
-	cnt = 2
+def simplex (A, b, c, x, J, flag = True):
+
+	k = computeZ(A, c, J, flag)
+
+	cnt = 1
 	while k != -1:
-		print(cnt)
-		# if cnt == 8:
-			# break
+		print('Iteration - ' + str(cnt))
 		cnt += 1
 		deltaX = computeDeltaX(A, k, J)
-		deltaX = np.asarray(deltaX, dtype = np.float64)
+		deltaX = deltaX.reshape(-1,1)
+
+		if (A.dot(deltaX) <= 0).all():
+			return None
+
 		alpha, index = getAlpha(A, b, x, deltaX, J)
 		l = alpha*deltaX
-		# print('k',k)
-		# print(A.dot(deltaX))
-		# print('deltaX', deltaX)
-		# print('alpha', alpha)
 		x = x.reshape(-1,1)
 		x = x + l
 		J = np.delete(J, k)
 		J = np.append(J, index)
-		# print('-',J + 1)
-		k = computeZ(A, c, J)
+		k = computeZ(A, c, J, flag)
 
-	print(x)
+	return x.round(5)
 
 if __name__ == '__main__':
-	simplex(A, b, c)
+
+	x, J = initExtreme(A, b, c)
+	if x is None:
+		print('Infeasible')
+	else:
+
+		# Active set obtained here may lead to zero determinant (Check)
+		if len(J) > A.shape[1]:
+			J = J[:A.shape[1]]
+
+		# x = x.round(5)
+		x = simplex(A, b, c, x, J)
+		if x is None:
+			print('Unbounded')
+		else:
+			print(x.round(5))
+
+
 		
 
 
