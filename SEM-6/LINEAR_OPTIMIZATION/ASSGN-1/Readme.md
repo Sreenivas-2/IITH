@@ -6,6 +6,7 @@ In this assignment we will solve the standard maximization problem using Simplex
 	Ax <= b 
 
 (2) Problem - 2 : (Degenerate Case)
+	
 	Maximize c
 	Ax <= b
 
@@ -16,7 +17,7 @@ In this assignment we will solve the standard maximization problem using Simplex
 
 (**) References :
 
-	=> [here](http://www.seas.ucla.edu/~vandenbe/ee236a/lectures/simplex.pdf)
+	=> http://www.seas.ucla.edu/~vandenbe/ee236a/lectures/simplex.pdf
 
 	=> For initial Point Generation :
 
@@ -39,4 +40,4 @@ In this assignment we will solve the standard maximization problem using Simplex
 					     0  0  1			  -3
 
 
-	=> For degeneracy we follow the epsilon method mentioned here (Degeneracy section) : (https://www.cse.iitb.ac.in/~sundar/linear_optimization/lecture16.pdf)
+	=> For degeneracy we follow the epsilon method mentioned here (Degeneracy section) : https://www.cse.iitb.ac.in/~sundar/linear_optimization/lecture16.pdf
