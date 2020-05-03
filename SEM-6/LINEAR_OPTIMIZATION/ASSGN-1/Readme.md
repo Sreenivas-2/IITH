@@ -11,11 +11,11 @@ In this assignment we will solve the standard maximization problem using Simplex
 	Ax <= b
 
 
--- Input is accepted manually
+--> Input is accepted manually
 
--- Some test cases are attached (test_cases.txt)
+--> Some test cases are attached (test_cases.txt)
 
-(**) References :
+--> References :
 
 	=> http://www.seas.ucla.edu/~vandenbe/ee236a/lectures/simplex.pdf
 
