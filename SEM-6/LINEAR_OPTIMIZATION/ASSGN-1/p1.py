@@ -1,3 +1,9 @@
+'''
+  Ashwanth Kumar : CS17BTECH11017
+  Sai Sreenivas  : CS17BTECH11012
+  Sasikanth B    : CS17BTECH11010
+'''
+
 import numpy as np
 import random
 
@@ -75,7 +81,7 @@ def get_InactiveIndex(A, c, J):
 		return -1
 	else:
 		l = np.where(z>0)[0]
-		index = np.where(J == np.min(J[l]))
+		index = np.where(J == np.max(J[l]))
 		return index[0]
 
 
@@ -136,10 +142,10 @@ def simplex(A, b, c, x, J):
 
 	k = get_InactiveIndex(A, c, J)
 
-	cnt = 1
+	# cnt = 1
 	while k != -1:
-		print('Iteration - ' + str(cnt))
-		cnt += 1
+		# print('Iteration - ' + str(cnt))
+		# cnt += 1
 
 		DirVec = get_DirVec(A, k, J)
 		DirVec = DirVec.reshape(-1,1)
@@ -182,7 +188,7 @@ def main(A, b, c):
 if __name__ == '__main__':
 
 	# Input Section
-	rows = int(input('Enter the number of constraints : '))
+	rows = int(input('Enter the number of constraints (number of rows in A) : '))
 	print('Enter the elements of the matrix A row wise with row elements space separated (same as a matrix form)')
 
 	A = []
