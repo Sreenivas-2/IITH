@@ -16,7 +16,7 @@ In this assignment we will solve the standard maximization problem using Simplex
 
 (**) References :
 
-	=> (http://www.seas.ucla.edu/~vandenbe/ee236a/lectures/simplex.pdf)
+	=> [here](http://www.seas.ucla.edu/~vandenbe/ee236a/lectures/simplex.pdf)
 
 	=> For initial Point Generation :
 
